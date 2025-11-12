@@ -5,8 +5,13 @@ from html_utils import fetch_and_clean_html
 from chunking import TextChunker
 from vector_store import VectorStore
 import logging
+import os
+from dotenv import load_dotenv
 
-logging.basicConfig(level=logging.INFO)
+# Load environment variables
+load_dotenv()
+
+logging.basicConfig(level=logging.os.getenv('LOG_LEVEL', 'INFO'))
 logger = logging.getLogger(__name__)
 
 # Initialize FastAPI application
@@ -19,7 +24,7 @@ app = FastAPI(
 # Configure CORS - Allow requests from frontend
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],  # Frontend URL
+    allow_origins=["http://loca[os.getenv('FRONTEND_URL', 'http://localhost:3000')]
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -121,4 +126,4 @@ async def search(
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host="0.0.0.0", port=int(os.getenv('BACKEND_PORT', '8000')))
