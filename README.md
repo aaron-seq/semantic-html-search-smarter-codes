@@ -4,8 +4,6 @@
 
 A production-ready semantic search engine for HTML content that uses vector embeddings to find conceptually similar text. Built with FastAPI (backend) and designed for Next.js (frontend), this system demonstrates modern NLP techniques and clean API design.
 
-**Built for**: Smarter.codes Technical Interview Assessment
-
 ## Features
 
 - **Semantic Search**: Uses sentence-transformers to find meaning-based similarities
