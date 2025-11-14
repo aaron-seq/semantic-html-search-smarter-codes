@@ -29,7 +29,7 @@ export default function Home() {
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-
+    
     if (!url || !query) {
       setError('Please provide both URL and search query');
       return;
@@ -197,7 +197,7 @@ export default function Home() {
         <footer className="bg-white border-t border-gray-200 mt-20 py-8">
           <div className="container mx-auto px-4 text-center text-gray-600">
             <p className="text-sm">
-              Built using FastAPI, Next.js, and Sentence Transformers |
+              Built with ❤️ using FastAPI, Next.js, and Sentence Transformers | 
               <a href="https://github.com/aaron-seq/semantic-html-search-smarter-codes" className="text-indigo-600 hover:text-indigo-800 ml-2 font-medium">
                 View on GitHub
               </a>
