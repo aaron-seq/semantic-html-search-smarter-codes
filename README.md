@@ -8,15 +8,15 @@ A production-ready semantic search engine for HTML content that uses **Qdrant ve
 
 ## Key Features
 
-- ✅ **Vector Database**: Qdrant integration for persistent, scalable vector storage
-- ✅ **Semantic Search**: Uses sentence-transformers (all-MiniLM-L6-v2) for meaning-based similarity
-- ✅ **HTML Processing**: Fetches and cleans HTML content automatically
-- ✅ **Smart Chunking**: Intelligent text splitting with BERT tokenizer (500 tokens max)
-- ✅ **RESTful API**: FastAPI with automatic OpenAPI documentation
-- ✅ **Modern Frontend**: Next.js single-page application with responsive UI
-- ✅ **Type Safety**: Full Pydantic models and Python type hints
-- ✅ **Docker Ready**: Complete Docker Compose setup for easy deployment
-- ✅ **Comprehensive Tests**: Unit and integration tests with pytest
+-  **Vector Database**: Qdrant integration for persistent, scalable vector storage
+-  **Semantic Search**: Uses sentence-transformers (all-MiniLM-L6-v2) for meaning-based similarity
+-  **HTML Processing**: Fetches and cleans HTML content automatically
+-  **Smart Chunking**: Intelligent text splitting with BERT tokenizer (500 tokens max)
+-  **RESTful API**: FastAPI with automatic OpenAPI documentation
+-  **Modern Frontend**: Next.js single-page application with responsive UI
+-  **Type Safety**: Full Pydantic models and Python type hints
+-  **Docker Ready**: Complete Docker Compose setup for easy deployment
+-  **Comprehensive Tests**: Unit and integration tests with pytest
 
 ## Architecture
 
@@ -327,10 +327,10 @@ FRONTEND_URL=http://localhost:3000
 ## Scaling to Production
 
 ### Current Implementation
-- ✅ Persistent vector database (Qdrant)
-- ✅ Docker containerization
-- ✅ Stateless API design
-- ✅ Comprehensive error handling
+-  Persistent vector database (Qdrant)
+-  Docker containerization
+-  Stateless API design
+-  Comprehensive error handling
 
 ### Production Recommendations
 
@@ -417,15 +417,15 @@ tailwindcss               # Styling
 
 ## Assignment Compliance Checklist
 
-✅ **Frontend**: Next.js SPA with URL + query inputs  
-✅ **Backend**: FastAPI with Python  
-✅ **HTML Parsing**: BeautifulSoup for DOM extraction  
-✅ **Tokenization**: BERT tokenizer with 500 token chunks  
-✅ **Vector Database**: Qdrant for semantic search  
-✅ **Top 10 Results**: Returns ranked results with scores  
-✅ **Clean Content**: Removes scripts, styles, navigation  
-✅ **Setup Instructions**: Complete README with prerequisites  
-✅ **Docker Support**: docker-compose.yml for easy deployment  
+ **Frontend**: Next.js SPA with URL + query inputs  
+ **Backend**: FastAPI with Python  
+ **HTML Parsing**: BeautifulSoup for DOM extraction  
+ **Tokenization**: BERT tokenizer with 500 token chunks  
+ **Vector Database**: Qdrant for semantic search  
+ **Top 10 Results**: Returns ranked results with scores  
+ **Clean Content**: Removes scripts, styles, navigation  
+ **Setup Instructions**: Complete README with prerequisites  
+ **Docker Support**: docker-compose.yml for easy deployment  
 
 ## License
 
@@ -442,7 +442,3 @@ GitHub: [@aaron-seq](https://github.com/aaron-seq)
 - Uses Hugging Face transformers and sentence-transformers
 - Powered by Qdrant vector database
 - Inspired by modern semantic search applications
-
----
-
-**Note**: This is a production-grade demonstration project showcasing semantic search capabilities with proper vector database integration. For enterprise deployment, implement additional security measures, monitoring, and scaling strategies as outlined in the "Scaling to Production" section.
