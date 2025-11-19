@@ -159,11 +159,24 @@ async def search(
             )
         
         # Step 5: Format response
+
+                # Format results for Pydantic validation
+                formatted_results = [
+                                {
+                                                    'chunk': {
+                                                                            'text': chunk['text'],
+                                                                            'start': chunk['start'],
+                                                                            'end': chunk['end']
+                                                                        },
+                                                    'score': score
+                                                }
+                                for chunk, score in results
+                            ]
         return SearchResponse(
-            url=request.url,
+            url=str(request.url),
             query=request.query,
-            results=results,
-            total_chunks=len(chunks)
+                        results=formatted_results,
+                        total_chunks=len(chunks)
         )
     
     except HTTPException:
