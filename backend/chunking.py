@@ -29,8 +29,8 @@ class TextChunker:
             chunks.append({
                 'chunk_index': chunk_index,
                 'text': chunk_text,
-                'start_token': start_idx,
-                'end_token': end_idx,
+                'start': start_idx,
+                'end': end_idx,
                 'token_count': len(chunk_tokens)
             })
             
