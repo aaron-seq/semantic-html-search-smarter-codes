@@ -1,21 +1,22 @@
-"""Vector store implementation using Pinecone for persistent vector storage and semantic search."""
+"""Vector store implementation using Qdrant for persistent vector storage and semantic search."""
 
 from sentence_transformers import SentenceTransformer
-from pinecone import Pinecone, ServerlessSpec
+from qdrant_client import QdrantClient
+from qdrant_client.models import Distance, VectorParams, PointStruct
 from typing import List, Dict, Tuple
 import logging
 import os
-import time
+import uuid
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 class VectorStore:
-    """Vector store using Pinecone for indexing and semantic search."""
+    """Vector store using Qdrant for indexing and semantic search."""
     
     def __init__(self, model_name: str = "all-MiniLM-L6-v2"):
         """
-        Initialize the vector store with Pinecone client and sentence transformer.
+        Initialize the vector store with Qdrant client and sentence transformer.
         
         Args:
             model_name: Name of the sentence-transformers model to use
@@ -24,81 +25,60 @@ class VectorStore:
         self.model = SentenceTransformer(model_name)
         self.embedding_dim = self.model.get_sentence_embedding_dimension()
         
-        # Initialize Pinecone client
-        pinecone_api_key = os.getenv('PINECONE_API_KEY')
-        if not pinecone_api_key:
-            raise ValueError("PINECONE_API_KEY environment variable not set")
+        # Initialize Qdrant client
+        qdrant_host = os.getenv('QDRANT_HOST', 'localhost')
+        qdrant_port = int(os.getenv('QDRANT_PORT', '6333'))
         
-        logger.info("Initializing Pinecone client")
-        self.pc = Pinecone(api_key=pinecone_api_key)
+        logger.info(f"Connecting to Qdrant at {qdrant_host}:{qdrant_port}")
+        self.client = QdrantClient(host=qdrant_host, port=qdrant_port)
         
-        # Index name for HTML chunks
-        self.index_name = os.getenv('PINECONE_INDEX_NAME', 'html-search')
+        # Collection name for HTML chunks
+        self.collection_name = "html_chunks"
         
-        # Ensure index exists
-        self._ensure_index()
-        
-        # Get index reference
-        self.index = self.pc.Index(self.index_name)
+        # Ensure collection exists
+        self._ensure_collection()
         
         logger.info(f"Initialized VectorStore with {model_name} (dim={self.embedding_dim})")
     
-    def _ensure_index(self) -> None:
-        """Create index if it doesn't exist."""
+    def _ensure_collection(self) -> None:
+        """Create collection if it doesn't exist, or recreate it for fresh indexing."""
         try:
-            existing_indexes = [index.name for index in self.pc.list_indexes()]
+            # Check if collection exists
+            collections = self.client.get_collections().collections
+            collection_exists = any(c.name == self.collection_name for c in collections)
             
-            if self.index_name not in existing_indexes:
-                logger.info(f"Creating new Pinecone index: {self.index_name}")
-                
-                # Get cloud and region from env or use defaults
-                cloud = os.getenv('PINECONE_CLOUD', 'aws')
-                region = os.getenv('PINECONE_REGION', 'us-east-1')
-                
-                self.pc.create_index(
-                    name=self.index_name,
-                    dimension=self.embedding_dim,
-                    metric='cosine',
-                    spec=ServerlessSpec(
-                        cloud=cloud,
-                        region=region
-                    )
+            if collection_exists:
+                # Delete existing collection for fresh indexing
+                logger.info(f"Deleting existing collection: {self.collection_name}")
+                self.client.delete_collection(collection_name=self.collection_name)
+            
+            # Create new collection
+            logger.info(f"Creating collection: {self.collection_name}")
+            self.client.create_collection(
+                collection_name=self.collection_name,
+                vectors_config=VectorParams(
+                    size=self.embedding_dim,
+                    distance=Distance.COSINE
                 )
-                
-                # Wait for index to be ready
-                logger.info("Waiting for index to be ready...")
-                while not self.pc.describe_index(self.index_name).status['ready']:
-                    time.sleep(1)
-                
-                logger.info(f"Index '{self.index_name}' created successfully")
-            else:
-                logger.info(f"Using existing index: {self.index_name}")
-                
+            )
+            logger.info(f"Collection '{self.collection_name}' created successfully")
+            
         except Exception as e:
-            logger.error(f"Error managing index: {str(e)}")
+            logger.error(f"Error managing collection: {str(e)}")
             raise
     
-    def index_chunks(self, chunks: List[Dict[str, any]], namespace: str = "") -> None:
+    def index_chunks(self, chunks: List[Dict[str, any]]) -> None:
         """
-        Index text chunks into Pinecone vector database.
+        Index text chunks into Qdrant vector database.
         
         Args:
             chunks: List of chunk dictionaries with 'text', 'start', and 'end' keys
-            namespace: Optional namespace for organization (e.g., URL-based)
         
         Raises:
             ValueError: If chunks list is empty
         """
         if not chunks:
             raise ValueError("Cannot index empty chunks")
-        
-        # Clear existing vectors in namespace for fresh indexing
-        if namespace:
-            try:
-                self.index.delete(delete_all=True, namespace=namespace)
-                logger.info(f"Cleared namespace: {namespace}")
-            except:
-                pass  # Namespace might not exist yet
         
         # Extract texts for embedding
         texts = [chunk['text'] for chunk in chunks]
@@ -112,41 +92,37 @@ class VectorStore:
             normalize_embeddings=True
         )
         
-        # Prepare vectors for Pinecone (batch upsert)
-        vectors = []
+        # Prepare points for Qdrant
+        points = []
         for idx, (chunk, embedding) in enumerate(zip(chunks, embeddings)):
-            vector_id = f"chunk_{idx}_{int(time.time() * 1000)}"
-            vectors.append({
-                'id': vector_id,
-                'values': embedding.tolist(),
-                'metadata': {
+            point = PointStruct(
+                id=str(uuid.uuid4()),  # Generate unique ID
+                vector=embedding.tolist(),
+                payload={
                     'text': chunk['text'],
                     'start': chunk['start'],
                     'end': chunk['end'],
                     'chunk_index': idx
                 }
-            })
-        
-        # Upsert vectors in batches (Pinecone recommends batch size of 100)
-        batch_size = 100
-        for i in range(0, len(vectors), batch_size):
-            batch = vectors[i:i + batch_size]
-            self.index.upsert(
-                vectors=batch,
-                namespace=namespace
             )
-            logger.info(f"Upserted batch {i//batch_size + 1} ({len(batch)} vectors)")
+            points.append(point)
         
-        logger.info(f"Successfully indexed {len(chunks)} chunks in Pinecone")
+        # Upsert points to Qdrant
+        logger.info(f"Upserting {len(points)} points to Qdrant")
+        self.client.upsert(
+            collection_name=self.collection_name,
+            points=points
+        )
+        
+        logger.info(f"Successfully indexed {len(chunks)} chunks in Qdrant")
     
-    def search(self, query: str, top_k: int = 10, namespace: str = "") -> List[Tuple[Dict, float]]:
+    def search(self, query: str, top_k: int = 10) -> List[Tuple[Dict, float]]:
         """
-        Perform semantic search using Pinecone vector database.
+        Perform semantic search using Qdrant vector database.
         
         Args:
             query: Search query string
             top_k: Number of top results to return
-            namespace: Optional namespace to search within
         
         Returns:
             List of tuples containing (chunk_dict, similarity_score)
@@ -154,21 +130,13 @@ class VectorStore:
         Raises:
             ValueError: If vector store is not indexed
         """
-        # Check if index has data
+        # Check if collection has data
         try:
-            stats = self.index.describe_index_stats()
-            total_vectors = stats.get('total_vector_count', 0)
-            
-            if namespace:
-                namespace_stats = stats.get('namespaces', {}).get(namespace, {})
-                namespace_count = namespace_stats.get('vector_count', 0)
-                if namespace_count == 0:
-                    raise ValueError(f"No vectors found in namespace: {namespace}")
-            elif total_vectors == 0:
-                raise ValueError("Vector store not indexed - no vectors in index")
-                
+            collection_info = self.client.get_collection(collection_name=self.collection_name)
+            if collection_info.points_count == 0:
+                raise ValueError("Vector store not indexed - no points in collection")
         except Exception as e:
-            logger.error(f"Error checking index: {str(e)}")
+            logger.error(f"Error checking collection: {str(e)}")
             raise ValueError("Vector store not indexed")
         
         # Generate query embedding
@@ -179,39 +147,34 @@ class VectorStore:
             normalize_embeddings=True
         )
         
-        # Search in Pinecone
+        # Search in Qdrant
         logger.info(f"Searching for top {top_k} results")
-        search_results = self.index.query(
-            vector=query_embedding.tolist(),
-            top_k=top_k,
-            namespace=namespace,
-            include_metadata=True
+        search_results = self.client.search(
+            collection_name=self.collection_name,
+            query_vector=query_embedding.tolist(),
+            limit=top_k
         )
         
         # Format results
         results = []
-        for match in search_results.get('matches', []):
-            metadata = match.get('metadata', {})
+        for result in search_results:
             chunk = {
-                'text': metadata.get('text', ''),
-                'start': metadata.get('start', 0),
-                'end': metadata.get('end', 0)
+                'text': result.payload['text'],
+                'start': result.payload['start'],
+                'end': result.payload['end']
             }
-            score = float(match.get('score', 0.0))
+            score = float(result.score)
             results.append((chunk, score))
         
         logger.info(f"Search returned {len(results)} results")
         return results
     
-    def clear(self, namespace: str = "") -> None:
-        """Clear all data from the vector store or specific namespace."""
+    def clear(self) -> None:
+        """Clear all data from the vector store."""
         try:
-            if namespace:
-                logger.info(f"Clearing namespace: {namespace}")
-                self.index.delete(delete_all=True, namespace=namespace)
-            else:
-                logger.info("Clearing all vectors from index")
-                self.index.delete(delete_all=True)
+            logger.info(f"Clearing collection: {self.collection_name}")
+            self.client.delete_collection(collection_name=self.collection_name)
+            self._ensure_collection()
             logger.info("Vector store cleared")
         except Exception as e:
             logger.error(f"Error clearing vector store: {str(e)}")
@@ -220,12 +183,11 @@ class VectorStore:
     def get_stats(self) -> Dict[str, any]:
         """Get statistics about the vector store."""
         try:
-            stats = self.index.describe_index_stats()
+            collection_info = self.client.get_collection(collection_name=self.collection_name)
             return {
-                'index_name': self.index_name,
-                'total_vector_count': stats.get('total_vector_count', 0),
-                'dimension': self.embedding_dim,
-                'namespaces': stats.get('namespaces', {}),
+                'collection_name': self.collection_name,
+                'points_count': collection_info.points_count,
+                'embedding_dim': self.embedding_dim,
                 'distance_metric': 'cosine'
             }
         except Exception as e:
