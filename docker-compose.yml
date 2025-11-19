@@ -29,6 +29,7 @@ services:
       - QDRANT_PORT=6333
       - BACKEND_PORT=8000
       - LOG_LEVEL=INFO
+      - FRONTEND_URL=http://localhost:3000
     depends_on:
       - qdrant
     restart: unless-stopped
