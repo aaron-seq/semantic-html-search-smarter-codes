@@ -80,7 +80,7 @@ export default function Home() {
     <>
       <Head>
         <title>Semantic HTML Search | AI-Powered Content Discovery</title>
-        <meta name="description" content="Search HTML content using semantic embeddings with Pinecone vector database" />
+        <meta name="description" content="Search HTML content using semantic embeddings with Qdrant vector database" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link rel="icon" href="/favicon.ico" />
       </Head>
@@ -108,12 +108,12 @@ export default function Home() {
             </h1>
             <p className="text-xl text-gray-600 max-w-2xl mx-auto">
               Discover content using AI-powered semantic understanding with{' '}
-              <span className="font-semibold text-indigo-600">Pinecone</span> vector database
+              <span className="font-semibold text-indigo-600">Qdrant</span> vector database
             </p>
             <div className="mt-4 flex items-center justify-center gap-2 text-sm text-gray-500">
               <span className="inline-flex items-center px-3 py-1 rounded-full bg-white shadow-sm border border-gray-200">
                 <span className="w-2 h-2 bg-green-500 rounded-full mr-2 animate-pulse"></span>
-                Powered by Pinecone
+                Qdrant Vector DB
               </span>
               <span className="inline-flex items-center px-3 py-1 rounded-full bg-white shadow-sm border border-gray-200">
                 FastAPI Backend
