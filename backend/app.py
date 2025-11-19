@@ -97,7 +97,7 @@ async def search(
         
         # Step 1: Fetch and clean HTML
         try:
-            clean_text = fetch_and_clean_html(request.url)
+            clean_text, title = fetch_and_clean_html(request.url)
             logger.info(f"Fetched {len(clean_text)} characters from URL")
             
             if not clean_text or len(clean_text.strip()) == 0:
