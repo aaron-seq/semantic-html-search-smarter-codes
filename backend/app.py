@@ -6,7 +6,6 @@ from chunking import TextChunker
 from vector_store import VectorStore
 import logging
 import os
-import hashlib
 from dotenv import load_dotenv
 
 # Load environment variables
@@ -18,7 +17,7 @@ logger = logging.getLogger(__name__)
 # Initialize FastAPI application
 app = FastAPI(
     title="Semantic HTML Search",
-    description="Search HTML content using semantic embeddings with Pinecone",
+    description="Search HTML content using semantic embeddings with Qdrant",
     version="2.0.0"
 )
 
@@ -56,7 +55,7 @@ async def root():
         "status": "healthy",
         "service": "Semantic HTML Search",
         "version": "2.0.0",
-        "vector_db": "Pinecone"
+        "vector_db": "Qdrant"
     }
 
 @app.get("/health")
@@ -75,12 +74,6 @@ async def health_check():
             "error": str(e)
         }
 
-def create_namespace(url: str) -> str:
-    """Create a consistent namespace from URL for Pinecone indexing"""
-    # Use hash of URL to create a valid namespace
-    url_hash = hashlib.md5(url.encode()).hexdigest()[:16]
-    return f"url_{url_hash}"
-
 @app.post("/search", response_model=SearchResponse)
 async def search(
     request: SearchRequest
@@ -89,7 +82,7 @@ async def search(
     Search endpoint that:
     1. Fetches HTML from the provided URL
     2. Chunks the text content (max 500 tokens per chunk)
-    3. Indexes chunks in Pinecone vector store with URL-based namespace
+    3. Indexes chunks in Qdrant vector store
     4. Performs semantic search
     5. Returns top-k results with scores
     """
@@ -101,10 +94,6 @@ async def search(
     
     try:
         logger.info(f"Processing search request for URL: {request.url}")
-        
-        # Create namespace from URL for organization
-        namespace = create_namespace(request.url)
-        logger.info(f"Using namespace: {namespace}")
         
         # Step 1: Fetch and clean HTML
         try:
@@ -144,10 +133,10 @@ async def search(
                 detail=f"Failed to process text: {str(e)}"
             )
         
-        # Step 3: Index chunks in Pinecone with namespace
+        # Step 3: Index chunks in Qdrant
         try:
-            vector_store.index_chunks(chunks, namespace=namespace)
-            logger.info(f"Chunks indexed successfully in namespace: {namespace}")
+            vector_store.index_chunks(chunks)
+            logger.info("Chunks indexed successfully")
         except Exception as e:
             logger.error(f"Failed to index chunks: {str(e)}")
             raise HTTPException(
@@ -159,8 +148,7 @@ async def search(
         try:
             results = vector_store.search(
                 query=request.query,
-                top_k=request.top_k,
-                namespace=namespace
+                top_k=request.top_k
             )
             logger.info(f"Found {len(results)} results")
         except Exception as e:
