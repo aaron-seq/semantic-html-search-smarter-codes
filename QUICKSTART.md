@@ -12,31 +12,47 @@ Before starting, make sure you have:
 
 - [ ] **Python 3.8+** installed (`python --version`)
 - [ ] **Node.js 16+** installed (`node --version`)
-- [ ] **Pinecone Account** ([Sign up free](https://www.pinecone.io/))
+- [ ] **Docker** installed (for Qdrant database)
 - [ ] **Git** installed
 
 ---
 
-## Step 1: Get Pinecone API Key (2 minutes)
-
-1. Go to [https://www.pinecone.io/](https://www.pinecone.io/)
-2. Sign up for a free account
-3. Create a new project
-4. Navigate to **API Keys** in the dashboard
-5. Copy your **API Key**
-6. Note your **Environment** (e.g., `us-east-1-aws`)
-
----
-
-## Step 2: Clone and Setup Backend (2 minutes)
+## Step 1: Clone Repository
 
 ```bash
 # Clone repository
 git clone https://github.com/aaron-seq/semantic-html-search-smarter-codes.git
 cd semantic-html-search-smarter-codes
+```
 
-# Setup backend
+---
+
+## Step 2: Start Qdrant (1 minute)
+
+```bash
+# Start Qdrant using Docker
+docker run -d \
+  --name qdrant \
+  -p 6333:6333 \
+  -p 6334:6334 \
+  -v $(pwd)/qdrant_storage:/qdrant/storage \
+  qdrant/qdrant:latest
+
+# Verify it's running
+curl http://localhost:6333
+```
+
+✅ Qdrant running at http://localhost:6333
+
+---
+
+## Step 3: Setup Backend (2 minutes)
+
+```bash
+# Navigate to backend
 cd backend
+
+# Create virtual environment
 python -m venv venv
 
 # Activate virtual environment
@@ -48,22 +64,10 @@ source venv/bin/activate
 # Install dependencies
 pip install -r requirements.txt
 
-# Create .env file
+# Create .env file (no API keys needed!)
 cp ../.env.example .env
-```
 
-**Edit `.env` file with your Pinecone credentials:**
-
-```env
-PINECONE_API_KEY=your_api_key_here
-PINECONE_INDEX_NAME=html-search
-PINECONE_CLOUD=aws
-PINECONE_REGION=us-east-1
-```
-
-**Start backend:**
-
-```bash
+# Start backend
 python app.py
 ```
 
@@ -71,7 +75,7 @@ python app.py
 
 ---
 
-## Step 3: Setup Frontend (1 minute)
+## Step 4: Setup Frontend (1 minute)
 
 Open a **new terminal window**:
 
@@ -93,46 +97,38 @@ npm run dev
 
 ---
 
-## Step 4: Test the Application
+## Step 5: Test the Application
 
 1. Open browser to http://localhost:3000
 2. Enter a URL: `https://en.wikipedia.org/wiki/Artificial_intelligence`
 3. Enter a query: `machine learning and neural networks`
 4. Click **Search**
-5. View your semantic search results!
+5. View your beautiful semantic search results! 🎉
 
 ---
 
 ## Troubleshooting
 
+### Qdrant won't start
+
+**Fix**: Make sure Docker is running:
+```bash
+docker ps
+```
+
 ### Backend won't start
 
-**Error**: `PINECONE_API_KEY environment variable not set`
-
-**Fix**: Make sure your `.env` file exists in the `backend/` directory with your API key.
+**Fix**: Make sure virtual environment is activated and dependencies are installed:
+```bash
+pip install -r requirements.txt
+```
 
 ### Frontend can't connect
-
-**Error**: Network error or CORS issues
 
 **Fix**: 
 1. Verify backend is running at http://localhost:8000
 2. Check `.env.local` file in `frontend/` directory
 3. Restart both backend and frontend
-
-### Module not found
-
-**Fix**: Make sure you installed dependencies:
-
-```bash
-# Backend
-cd backend
-pip install -r requirements.txt
-
-# Frontend
-cd frontend
-npm install
-```
 
 ---
 
@@ -141,18 +137,8 @@ npm install
 - 📚 Read the full [README.md](./README.md)
 - 🔧 Check out [API Documentation](http://localhost:8000/docs)
 - 🧪 Run tests: `cd backend && pytest test_backend.py -v`
+- 🎨 View Qdrant Dashboard: http://localhost:6333/dashboard
 - 📦 Deploy with Docker: `docker-compose up -d`
-
----
-
-## Need Help?
-
-If you encounter any issues:
-
-1. Check the [Troubleshooting section](./README.md#-troubleshooting) in README
-2. Review backend logs in the terminal
-3. Check browser console for frontend errors
-4. Verify your Pinecone API key is valid
 
 ---
 
