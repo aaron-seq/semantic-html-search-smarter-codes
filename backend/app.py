@@ -161,15 +161,15 @@ async def search(
         # Step 5: Format response
 
                 # Format results for Pydantic validation
-                formatted_results = [
+        formatted_results = [
                                 {
                                                     'chunk': {
                                                                             'text': chunk['text'],
                                                                             'start': chunk['start'],
                                                                             'end': chunk['end']
-                                                                        },
+                                                            },
                                                     'score': score
-                                                }
+                                }
                                 for chunk, score in results
                             ]
         return SearchResponse(
